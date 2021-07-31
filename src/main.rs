@@ -20,8 +20,9 @@ mod vga_buffer;
 /* We are not ever returning a value (! means it is diverging). This is because the entry point is not called by any function but it is invoked by the operating system or bootloader instead. It could invoke something like shutting down, but we'll loop ad infinitum for now. */
 pub extern "C" fn _start() -> ! {
 
-    vga_buffer::print_something();
-
+    use core::fmt::Write;
+    vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
+    write!(vga_buffer::WRITER.lock(), ", some numbers! {} {} {}", 13, 04, 2021).unwrap();
     // The linker is looking for a functio nnamed '_start' by default.
     loop {}
 }

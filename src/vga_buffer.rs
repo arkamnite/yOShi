@@ -55,6 +55,17 @@ pub struct Writer {
                                  // The ' is a static lifetime to say that this is valid for the whole program runtime.
 }
 
+use spin::Mutex;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
+        column_position: 0,
+        colour_code: ColourCode::new(Colour::White, Colour::Red),
+        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }, // Requires lazy static as we cannot evaluate this pointer as a reference at compile time.
+    });
+}
+
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
@@ -79,6 +90,24 @@ impl Writer {
     }
 
     fn new_line(&mut self) { /* TODO */
+        for row in 1..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(character); // Move each character in the rows upwards.
+            }
+        }
+        self.clear_row(BUFFER_HEIGHT - 1);
+        self.column_position = 0;
+    }
+
+    fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            colour_code: self.colour_code,
+        };
+        for col in 0..BUFFER_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
     }
 }
 
@@ -93,20 +122,6 @@ impl Writer {
             }
         }
     }
-}
-
-pub fn print_something() {
-    use core::fmt::Write;
-    let mut writer = Writer {
-        column_position: 0,
-        colour_code: ColourCode::new(Colour::Yellow, Colour::Green),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
-
-    writer.write_byte(b'H');
-    writer.write_string("ello ");
-    writer.write_string("Kirsten!");
-    write!(writer, "The date is {} of {}, year {}", 31, 7, 2021).unwrap();
 }
 
 use core::fmt;
