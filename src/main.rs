@@ -14,20 +14,19 @@ fn panic(_info: &PanicInfo) -> ! {
 
 static HELLO: &[u8] = b"Hello world!";
 
+mod vga_buffer;
+
 #[no_mangle] // Ensures that the function name is not mangled.
 /* We are not ever returning a value (! means it is diverging). This is because the entry point is not called by any function but it is invoked by the operating system or bootloader instead. It could invoke something like shutting down, but we'll loop ad infinitum for now. */
 pub extern "C" fn _start() -> ! {
 
-    let vga_buffer = 0xb8000 as *mut u8; // Cast into a raw pointer
-
-    for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe { // Required as rust cant prove that the raw pointers we create are valid.
-            *vga_buffer.offset(i as isize * 2) = byte; // Write the string byte
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb; // Write the colour byte
-        }
-    }
+    vga_buffer::print_something();
+    vga_buffer::print_something();
+    vga_buffer::print_something();
 
     // The linker is looking for a functio nnamed '_start' by default.
     loop {}
 }
+
+// Module to handle printing
 
