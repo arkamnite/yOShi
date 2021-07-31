@@ -21,8 +21,6 @@ mod vga_buffer;
 pub extern "C" fn _start() -> ! {
 
     vga_buffer::print_something();
-    vga_buffer::print_something();
-    vga_buffer::print_something();
 
     // The linker is looking for a functio nnamed '_start' by default.
     loop {}
